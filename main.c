@@ -159,12 +159,14 @@ int main(int argc, char **argv) {
 	programmer_t *pgm = NULL;
 	const stm8_device_t *part = NULL;
 	while((c = getopt (argc, argv, "r:w:v:nc:p:s:b:luV")) != (char)-1) {
-		switch(c) {
+		switch(c) 
+		{
 			case 'c':
 				pgm_specified = true;
-				for(i = 0; pgms[i].name; i++) {
+				for(i = 0; pgms[i].name; i++)
+				{
 					if(!strcmp(optarg, pgms[i].name))
-						pgm = &pgms[i];
+					pgm = &pgms[i];
 				}
 				break;
 			case 'p':
@@ -188,7 +190,7 @@ int main(int argc, char **argv) {
 				action = VERIFY;
 				strcpy(filename, optarg);
 				break;
-                        case 'u':
+                case 'u':
 				action = UNLOCK;
 				start  = 0x4800;
 				memtype = OPT;
@@ -217,10 +219,10 @@ int main(int argc, char **argv) {
                 bytes_count_specified = true;
 				break;
 			case 'V':
-                                print_version_and_exit( (bool)0);
+                print_version_and_exit( (bool)0);
 				break;
 			case '?':
-                                print_help_and_exit(argv[0], false);
+                print_help_and_exit(argv[0], false);
 			default:
 				print_help_and_exit(argv[0], true);
 		}
@@ -257,10 +259,12 @@ int main(int argc, char **argv) {
         }
     }
 
-	if(memtype != UNKNOWN) {
+	if(memtype != UNKNOWN)
+	{
 		// Selecting start addr depending on
 		// specified part and memtype
-		switch(memtype) {
+		switch(memtype) 
+		{
 			case RAM:
                 if(!start_addr_specified) {
                     start = part->ram_start;
@@ -316,7 +320,8 @@ int main(int argc, char **argv) {
 
 
 	FILE *f;
-	if(action == READ) {
+	if(action == READ)
+	{
 		fprintf(stderr, "Reading %d bytes at 0x%x... ", bytes_count, start);
 		fflush(stderr);
         int bytes_count_align = ((bytes_count-1)/256+1)*256; // Reading should be done in blocks of 256 bytes
@@ -336,9 +341,10 @@ int main(int argc, char **argv) {
 		}
 		else if(is_ext(filename, ".s19") || is_ext(filename, ".s8") || is_ext(filename, ".srec"))
 		{
-			printf("Reading from Motorola S-record files are not implemented (yet)\n");
-      printf("Exiting...\n");
-			exit(-1);
+
+			// printf("Reading from Motorola S-record files are not implemented (yet)\n");
+   			// printf("Exiting...\n");
+			// exit(-1);
 
 			//TODO Remove the above message and exit, and implement reading from S-record.
 			fprintf(stderr, "Reading from Motorola S-record file ");
@@ -351,7 +357,10 @@ int main(int argc, char **argv) {
 		fclose(f);
 		fprintf(stderr, "OK\n");
 		fprintf(stderr, "Bytes received: %d\n", bytes_count);
-    } else if (action == VERIFY) {
+    
+    } 
+    else if (action == VERIFY) 
+    {
 		fprintf(stderr, "Verifing %d bytes at 0x%x... ", bytes_count, start);
 		fflush(stderr);
 
@@ -359,20 +368,28 @@ int main(int argc, char **argv) {
 		unsigned char *buf = malloc(bytes_count_align);
 		if(!buf) spawn_error("malloc failed");
 		int recv = pgm->read_range(pgm, part, buf, start, bytes_count_align);
-        if(recv < bytes_count_align) {
+        if(recv < bytes_count_align)
+        {
             fprintf(stderr, "\r\nRequested %d bytes but received only %d.\r\n", bytes_count_align, recv);
 			spawn_error("Failed to read MCU");
         }
 
 		if(!(f = fopen(filename, "r")))
-			spawn_error("Failed to open file");
+		spawn_error("Failed to open file");
 		unsigned char *buf2 = malloc(bytes_count);
 		if(!buf2) spawn_error("malloc failed");
 		int bytes_to_verify;
 		/* reading bytes to RAM */
-		if(is_ext(filename, ".ihx") || is_ext(filename, ".hex")) {
-			bytes_to_verify = ihex_read(f, buf, start, start + bytes_count);
-		} else {
+		if(is_ext(filename, ".ihx") || is_ext(filename, ".hex"))
+		{
+			bytes_to_verify = ihex_read(f, buf2, start, start + bytes_count);
+		}
+		else if(is_ext(filename, ".s19") || is_ext(filename, ".s8") || is_ext(filename, ".srec"))
+		{
+			bytes_to_verify = srec_read(f, buf2, start, start + bytes_count);
+		}
+		else
+		{
 			fseek(f, 0L, SEEK_END);
 			bytes_to_verify = ftell(f);
             if(bytes_count_specified) {
@@ -394,9 +411,11 @@ int main(int argc, char **argv) {
         }
 
 
-	} else if (action == WRITE) {
+	}
+	else if (action == WRITE)
+	{
 		if(!(f = fopen(filename, "r")))
-			spawn_error("Failed to open file");
+		spawn_error("Failed to open file");
         int bytes_count_align = ((bytes_count-1)/part->flash_block_size+1)*part->flash_block_size;
 		unsigned char *buf = malloc(bytes_count_align);
 		if(!buf) spawn_error("malloc failed");
@@ -404,19 +423,29 @@ int main(int argc, char **argv) {
 		int bytes_to_write;
 
 		/* reading bytes to RAM */
-		if(is_ext(filename, ".ihx") || is_ext(filename, ".hex")) {
+		if(is_ext(filename, ".ihx") || is_ext(filename, ".hex"))
+		{
 			fprintf(stderr, "Writing Intel hex file ");
 			bytes_to_write = ihex_read(f, buf, start, start + bytes_count);
-		} else if (is_ext(filename, ".s19") || is_ext(filename, ".s8") || is_ext(filename, ".srec")) {
+		} 
+
+		else if (is_ext(filename, ".s19") || is_ext(filename, ".s8") || is_ext(filename, ".srec")) 
+		{
 			fprintf(stderr, "Writing Motorola S-record file ");
 			bytes_to_write = srec_read(f, buf, start, start + bytes_count);
-		} else {
+		} 
+
+		else 
+		{
 			fprintf(stderr, "Writing binary file ");
 			fseek(f, 0L, SEEK_END);
 			bytes_to_write = ftell(f);
-            if(bytes_count_specified) {
+            if(bytes_count_specified)
+            {
                 bytes_to_write = bytes_count;
-            } else if(bytes_count < bytes_to_write) {
+            }
+            else if(bytes_count < bytes_to_write)
+            {
                 bytes_to_write = bytes_count;
             }
 			fseek(f, 0, SEEK_SET);
@@ -433,7 +462,9 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "OK\n");
 		fprintf(stderr, "Bytes written: %d\n", sent);
 		fclose(f);
-	} else if (action == UNLOCK) {
+	}
+	else if (action == UNLOCK)
+	{
 		int bytes_to_write=part->option_bytes_size;
 
 		if (part->read_out_protection_mode==ROP_UNKNOWN) spawn_error("No unlocking mode defined for this device. You may need to edit the file stm8.c");
